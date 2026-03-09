@@ -1,0 +1,6 @@
+[Unit]
+Description=NeuralOS Target
+After=multi-user.target
+
+[Install]
+WantedBy=multi-user.target

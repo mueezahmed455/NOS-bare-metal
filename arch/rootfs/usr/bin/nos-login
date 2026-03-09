@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""
+NeuralOS Login Program
+"""
+
+import os
+import sys
+
+NOS_VERSION = "0.1.0"
+
+def print_banner():
+    """Print login banner."""
+    print(f"""
+╔════════════════════════════════════════╗
+║       NeuralOS v{NOS_VERSION} (Synapse)          ║
+║           AI is the OS                 ║
+╚════════════════════════════════════════╝
+""")
+
+def main():
+    print_banner()
+    
+    # Check auto-login
+    if os.environ.get('NOS_AUTO_LOGIN', '1') == '1':
+        user = os.environ.get('NOS_DEFAULT_USER', 'user')
+        print(f"Auto-login: {user}")
+        
+        # Set environment
+        os.environ['USER'] = user
+        os.environ['LOGNAME'] = user
+        os.environ['HOME'] = f'/home/{user}'
+        os.environ['SHELL'] = '/usr/bin/nos-shell'
+        os.environ['PYTHONPATH'] = '/usr/lib/nos'
+        
+        # Exec shell
+        os.execv('/usr/bin/nos-shell', ['nos-shell'])
+    else:
+        # Interactive login (simplified - no PAM yet)
+        try:
+            username = input("login: ").strip()
+        except EOFError:
+            sys.exit(1)
+        
+        if username:
+            os.environ['USER'] = username
+            os.environ['LOGNAME'] = username
+            os.environ['HOME'] = f'/home/{username}'
+            os.environ['SHELL'] = '/usr/bin/nos-shell'
+            os.environ['PYTHONPATH'] = '/usr/lib/nos'
+            
+            os.execv('/usr/bin/nos-shell', ['nos-shell'])
+
+
+if __name__ == '__main__':
+    main()

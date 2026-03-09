@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Primary NeuralOS node
+  nos-primary:
+    image: neurlos/neurlos:0.1.0
+    build:
+      context: .
+      target: nos-full
+    container_name: nos-primary
+    stdin_open: true
+    tty: true
+    environment:
+      - NODE_ID=primary
+      - AUTO_LOGIN=true
+      - DEFAULT_USER=user
+      - TERM=xterm-256color
+      - PYTHONPATH=/usr/lib/nos
+    volumes:
+      - nos-home:/home/user
+      - nos-data:/var/lib/nos
+      - nos-logs:/var/log/nos
+      - nos-cache:/var/cache/nos
+    networks:
+      nos-net:
+        ipv4_address: 172.30.0.10
+    healthcheck:
+      test: ["CMD", "python3", "-c", "from nos import NeuralNode; n = NeuralNode(); print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Federated learning peer (optional)
+  nos-peer-1:
+    image: neurlos/neurlos:0.1.0
+    container_name: nos-peer-1
+    stdin_open: true
+    tty: true
+    environment:
+      - NODE_ID=peer-1
+      - AUTO_LOGIN=false
+      - TERM=xterm-256color
+      - PYTHONPATH=/usr/lib/nos
+    volumes:
+      - nos-peer1-data:/var/lib/nos
+      - nos-peer1-logs:/var/log/nos
+    networks:
+      nos-net:
+        ipv4_address: 172.30.0.11
+    profiles:
+      - federated
+    depends_on:
+      - nos-primary
+    restart: unless-stopped
+
+networks:
+  nos-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  nos-home:
+  nos-data:
+  nos-logs:
+  nos-cache:
+  nos-peer1-data:
+  nos-peer1-logs:

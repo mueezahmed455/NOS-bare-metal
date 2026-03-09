@@ -1,0 +1,6 @@
+/workspaces/NOS-cpp/build/CMakeFiles/kernel.dir
+/workspaces/NOS-cpp/build/CMakeFiles/iso.dir
+/workspaces/NOS-cpp/build/CMakeFiles/run.dir
+/workspaces/NOS-cpp/build/CMakeFiles/debug.dir
+/workspaces/NOS-cpp/build/CMakeFiles/edit_cache.dir
+/workspaces/NOS-cpp/build/CMakeFiles/rebuild_cache.dir

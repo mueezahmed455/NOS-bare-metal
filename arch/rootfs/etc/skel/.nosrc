@@ -1,0 +1,19 @@
+# NeuralOS User RC File
+# Sourced by nos-shell on login
+
+# User aliases
+alias ll='ls -la'
+alias la='ls -A'
+alias l='ls -CF'
+
+# NeuralOS shortcuts
+alias ai='nos diagnose'
+alias status='nos status'
+alias mem='nos memory'
+
+# Custom prompt (optional)
+# export PS1='\u@\h:\w$ '
+
+# Welcome message
+echo "Welcome to NeuralOS, $USER!"
+echo "Type 'help' for available commands."

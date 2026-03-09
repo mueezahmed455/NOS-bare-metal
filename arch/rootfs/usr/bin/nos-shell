@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+"""
+NeuralOS Login Shell Wrapper
+"""
+
+import os
+import sys
+
+# Ensure PYTHONPATH is set
+if '/usr/lib/nos' not in sys.path:
+    sys.path.insert(0, '/usr/lib/nos')
+
+# Source user's .nosrc if exists
+nosrc = os.path.expanduser('~/.nosrc')
+if os.path.exists(nosrc):
+    try:
+        with open(nosrc) as f:
+            exec(f.read())
+    except Exception:
+        pass
+
+# Import and run shell
+from nos.neural_shell import NOSShell
+
+if __name__ == '__main__':
+    shell = NOSShell()
+    shell.run()

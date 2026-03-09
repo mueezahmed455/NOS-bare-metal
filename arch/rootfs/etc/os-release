@@ -1,0 +1,12 @@
+NAME="NeuralOS"
+VERSION="0.1.0 (Synapse)"
+ID=neurlos
+ID_LIKE=arch
+VERSION_CODENAME=synapse
+VERSION_ID="0.1.0"
+PRETTY_NAME="NeuralOS 0.1.0 (Synapse)"
+ANSI_COLOR="1;36"
+HOME_URL="https://github.com/neurlos"
+SUPPORT_URL="https://github.com/neurlos/issues"
+BUG_REPORT_URL="https://github.com/neurlos/issues"
+LOGO=neurlos

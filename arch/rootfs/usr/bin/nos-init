@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""
+NeuralOS Init System (PID 1)
+Boot sequence and service orchestration
+"""
+
+import os
+import sys
+import signal
+import time
+import threading
+import json
+
+sys.path.insert(0, '/usr/lib/nos')
+
+from nos import NeuralNode
+from nos.system import create_node
+
+
+# Global shutdown event
+_shutdown = threading.Event()
+
+
+class ServiceDaemon(threading.Thread):
+    """Background service daemon."""
+    
+    def __init__(self, name, interval, fn):
+        super().__init__(daemon=True)
+        self.name = name
+        self.interval = interval
+        self.fn = fn
+        self._running = True
+    
+    def run(self):
+        while not _shutdown.is_set():
+            try:
+                if _shutdown.wait(self.interval):
+                    break
+                self.fn()
+            except Exception as e:
+                log_error(f"{self.name}: {e}")
+    
+    def stop(self):
+        self._running = False
+
+
+def log_info(msg):
+    """Log info message."""
+    ts = time.strftime('%H:%M:%S')
+    print(f"\033[1;32m[{ts}]\033[0m {msg}")
+
+
+def log_error(msg):
+    """Log error message."""
+    ts = time.strftime('%H:%M:%S')
+    print(f"\033[1;31m[{ts}]\033[0m \033[1;31mERROR:\033[0m {msg}")
+
+
+def print_banner():
+    """Print NeuralOS ASCII banner."""
+    banner = """
+\033[1;36m
+       _   _                 _     
+      | \ | | __ _ _ __   __| |___ 
+      |  \| |/ _` | '_ \ / _` / __|
+      | |\  | (_| | | | | (_| \__ \\
+      |_| \_|\__,_|_| |_|\__,_|___/
+      
+\033[0m    NeuralOS v0.1.0 (Synapse)
+    AI is the OS
+"""
+    print(banner)
+
+
+def load_config():
+    """Load configuration."""
+    config_path = '/etc/nos/nos.conf'
+    config = {
+        'AUTO_LOGIN': True,
+        'DEFAULT_USER': 'user',
+        'NODE_ID': 'primary',
+    }
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if '=' in line and not line.startswith('#'):
+                        key, value = line.split('=', 1)
+                        config[key.strip()] = value.strip()
+        except Exception:
+            pass
+    
+    return config
+
+
+def load_state():
+    """Load persistent state."""
+    state_path = '/var/lib/nos/state.json'
+    default_state = {
+        'boot_count': 0,
+        'install_date': time.time(),
+        'node_id': 'primary',
+        'models_trained': 0,
+        'federated_round': 0
+    }
+    
+    if os.path.exists(state_path):
+        try:
+            with open(state_path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    
+    return default_state
+
+
+def save_state(state):
+    """Save persistent state."""
+    state_path = '/var/lib/nos/state.json'
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    try:
+        with open(state_path, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        log_error(f"Failed to save state: {e}")
+
+
+def verify_neural_kernel():
+    """Verify neural kernel import."""
+    try:
+        from nos.kernel.nn_core import MLP, Autoencoder
+        log_info("Neural kernel verified ✓")
+        return True
+    except Exception as e:
+        log_error(f"Neural kernel verification failed: {e}")
+        return False
+
+
+# Service watchdogs
+_node = None
+
+def _svc_anomaly_watchdog():
+    """Anomaly detection service."""
+    global _node
+    if _node:
+        # Simulated metrics
+        metrics = {
+            'cpu_pct': 30,
+            'mem_pct': 45,
+            'read': 10,
+            'write': 5,
+        }
+        result = _node.anomaly_detector.observe(metrics)
+        if result.get('is_anomaly'):
+            log_info(f"⚠️ Anomaly detected: score={result['score']:.4f}")
+
+
+def _svc_resource_monitor():
+    """Resource monitoring service."""
+    global _node
+    if _node:
+        # Simulated metrics
+        _node.resource_predictor.record(35, 50)
+
+
+def _svc_cache_warmer():
+    """Cache warming service."""
+    global _node
+    if _node:
+        _node.cache.warm_from_time_model(lambda p: b'')
+
+
+def _svc_trainer():
+    """Model training service."""
+    global _node
+    if _node:
+        _node.simulate_activity(5)
+        log_info("Model warmup complete")
+
+
+def shutdown(signum=None, frame=None):
+    """Graceful shutdown handler."""
+    log_info("\nShutting down NeuralOS...")
+    _shutdown.set()
+    
+    # Save state
+    if _node:
+        log_info("Saving AI model state...")
+    
+    time.sleep(1)
+    log_info("Goodbye!")
+    sys.exit(0)
+
+
+def main():
+    global _node
+    
+    # Setup signal handlers
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+    
+    # Print banner
+    print_banner()
+    
+    # Load config and state
+    config = load_config()
+    state = load_state()
+    state['boot_count'] += 1
+    
+    log_info(f"Boot #{state['boot_count']}")
+    log_info(f"Node ID: {config['NODE_ID']}")
+    
+    # Verify neural kernel
+    if not verify_neural_kernel():
+        log_error("Neural kernel not available - continuing in degraded mode")
+    
+    # Initialize NeuralNode
+    log_info("Initializing NeuralNode...")
+    _node = create_node(config['NODE_ID'])
+    log_info("NeuralNode initialized ✓")
+    
+    # Start background services
+    log_info("Starting AI services...")
+    services = [
+        ServiceDaemon('anomaly', 10, _svc_anomaly_watchdog),
+        ServiceDaemon('resource', 5, _svc_resource_monitor),
+        ServiceDaemon('cache', 30, _svc_cache_warmer),
+        ServiceDaemon('trainer', 3600, _svc_trainer),
+    ]
+    
+    for svc in services:
+        svc.start()
+    
+    log_info(f"Started {len(services)} services")
+    
+    # Save state
+    save_state(state)
+    
+    # Ready
+    log_info("NeuralOS ready.\n")
+    
+    # Check for auto-login
+    if config.get('AUTO_LOGIN', 'true').lower() == 'true':
+        user = config.get('DEFAULT_USER', 'user')
+        log_info(f"Auto-login as {user}...")
+        time.sleep(1)
+        
+        # Set environment
+        os.environ['USER'] = user
+        os.environ['LOGNAME'] = user
+        os.environ['HOME'] = f'/home/{user}'
+        os.environ['SHELL'] = '/usr/bin/nos-shell'
+        os.environ['PYTHONPATH'] = '/usr/lib/nos'
+        
+        # Exec shell
+        os.execv('/usr/bin/nos-shell', ['nos-shell'])
+    else:
+        # Interactive login
+        log_info("Starting login prompt...")
+        os.execv('/usr/bin/nos-shell', ['nos-shell'])
+
+
+if __name__ == '__main__':
+    main()

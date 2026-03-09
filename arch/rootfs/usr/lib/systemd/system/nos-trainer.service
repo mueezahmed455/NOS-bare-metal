@@ -1,0 +1,12 @@
+[Unit]
+Description=NeuralOS Model Trainer Service
+PartOf=nos.target
+After=nos.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -c "from nos import NeuralNode; n = NeuralNode(); n.simulate_activity(20); print('Model warmup complete')"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=nos.target

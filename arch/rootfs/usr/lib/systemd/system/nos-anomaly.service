@@ -1,0 +1,12 @@
+[Unit]
+Description=NeuralOS Anomaly Detection Service
+PartOf=nos.target
+After=nos.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -c "from nos import NeuralNode; n = NeuralNode(); n.simulate_activity(5); print('Anomaly service ready')"
+Restart=on-failure
+
+[Install]
+WantedBy=nos.target
