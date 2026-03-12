@@ -1,0 +1,22 @@
+# Build directories
+build/
+*.o
+*.a
+*.so
+*.out
+kernel
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CMake
+CMakeUserPresets.json
+.cmake/
+
+# Test/temporary files
+test_write.txt
+*.log
